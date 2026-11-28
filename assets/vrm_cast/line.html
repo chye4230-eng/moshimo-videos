@@ -1,0 +1,19 @@
+<!doctype html><html><body style="margin:0">
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/","@pixiv/three-vrm":"./node_modules/@pixiv/three-vrm/lib/three-vrm.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';import {VRMLoaderPlugin,VRMUtils} from '@pixiv/three-vrm';import {applyJirai} from './jirai/jirai.js';import * as O from './outfit.js';
+const W=1600,H=900;const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);r.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(r.domElement);
+const s=new THREE.Scene();s.background=new THREE.Color(0xeee6ee);s.add(new THREE.HemisphereLight(0xffffff,0x998877,1.6));const d=new THREE.DirectionalLight(0xffffff,1.6);d.position.set(1,2,3);s.add(d);
+const fl=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshLambertMaterial({color:0xd8c8b8}));fl.rotation.x=-Math.PI/2;s.add(fl);
+const cam=new THREE.PerspectiveCamera(28,W/H,0.1,50);cam.position.set(0,1.0,5.6);cam.lookAt(0,0.85,0);
+const ld=new GLTFLoader().register(p=>new VRMLoaderPlugin(p));
+const files=['heroine.vrm','e.vrm','fumi.vrm'];const vs=[];
+for(let i=0;i<files.length;i++){const g=await ld.loadAsync('./'+files[i]);const v=g.userData.vrm;VRMUtils.rotateVRM0(v);if(i==0){await applyJirai(v);v.scene.traverse(o=>{if(o.userData&&o.userData.frill)o.visible=false});const body=O.findMesh(v,/Body_00_SKIN/);O.shapeLegs(v,body,1.5);O.sleeves(v,body,O.knit(0x1e1c22));O.boots(v,body,O.knit(0x131114));
+   for(const sd of ['left','right']){const ll=v.humanoid.getNormalizedBoneNode(sd+'LowerLeg');const w=new THREE.Mesh(new THREE.TorusGeometry(0.05,0.016,10,28),O.knit(0xf2efe8));w.rotation.x=Math.PI/2;w.position.y=-0.06;w.scale.set(1,1,1.6);ll.add(w);
+     const la=v.humanoid.getNormalizedBoneNode(sd+'LowerArm'),hd=v.humanoid.getNormalizedBoneNode(sd+'Hand');const c=new THREE.Mesh(new THREE.CylinderGeometry(0.036,0.04,0.035,24,1,true),new THREE.MeshToonMaterial({color:0xf4f2f6,side:THREE.DoubleSide}));const d=hd.position.clone();c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().normalize());c.position.copy(d.multiplyScalar(0.93));la.add(c);}}
+ if(i==1){await O.setTex(v,/Onepice_01/,'./tex_out/e_onepiece.png');const body=O.findMesh(v,/Body_00_SKIN/);O.shapeLegs(v,body,1.0);}
+ if(i==2){await O.setTex(v,/Tops_01/,'./tex_out/fumi_tee.png');await O.setTex(v,/Bottoms_01/,'./tex_out/fumi_bottoms.png');O.hide(v,/Accessory/);const body=O.findMesh(v,/Body_00_SKIN/);O.sleeves(v,body,O.knit(0x1d1d22),0.012);const tops=O.findMesh(v,/Tops_01/);O.jacket(v,tops,new THREE.MeshToonMaterial({color:0x1d1d22,side:THREE.DoubleSide}),0.06,0.012,-1);const bot=O.findMesh(v,/Bottoms_01/);O.widen(v,bot,1.1,1.45);}
+ v.scene.position.x=(i-1)*0.9;s.add(v.scene);const B=n=>v.humanoid.getNormalizedBoneNode(n);
+ const sg=i==0?1:-1;B('leftUpperArm').rotation.z=-1.2*sg;B('rightUpperArm').rotation.z=1.2*sg;v.scene.traverse(o=>{if(o.isMesh)o.frustumCulled=false});vs.push(v);}
+for(let k=0;k<60;k++)vs.forEach(v=>v.update(1/30));r.render(s,cam);window.ready=true;
+</script></body></html>
